@@ -1,0 +1,4 @@
+{
+  "database": "camunda-collab",
+  "server": "http://localhost:3000"
+}
