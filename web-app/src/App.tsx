@@ -270,7 +270,7 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
   );
 }
 
-// ── BPMN Editor ─────────────────────────────────────────────────────────────
+// ── BPMN Editor with Properties Panel ───────────────────────────────────────
 
 function BpmnEditorView({ diagram, identity, myName, onSave, onClose }: {
   diagram: any;
@@ -279,22 +279,36 @@ function BpmnEditorView({ diagram, identity, myName, onSave, onClose }: {
   onSave: (xml: string) => void;
   onClose: () => void;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const diagramRef = useRef<HTMLDivElement>(null);
+  const propertiesPanelRef = useRef<HTMLDivElement>(null);
   const modelerRef = useRef<any>(null);
   const lastXmlRef = useRef<string>('');
   const [dirty, setDirty] = useState(false);
   const timerRef = useRef<any>(null);
+  const [showXml, setShowXml] = useState(false);
+  const [xmlSource, setXmlSource] = useState('');
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!diagramRef.current || !propertiesPanelRef.current) return;
     let destroyed = false;
 
     import('camunda-bpmn-js/lib/camunda-platform/Modeler').then(({ default: Modeler }) => {
       if (destroyed) return;
 
-      const modeler = new Modeler({ position: 'absolute' });
+      const modeler = new Modeler({
+        position: 'absolute',
+        propertiesPanel: {},
+        keyboard: { bind: false },
+      });
+
       modelerRef.current = modeler;
-      modeler.attachTo(containerRef.current!);
+
+      // Attach diagram canvas
+      modeler.attachTo(diagramRef.current!);
+
+      // Attach properties panel (right side, like Camunda Modeler)
+      const propertiesPanel = modeler.get('propertiesPanel') as any;
+      propertiesPanel.attachTo(propertiesPanelRef.current!);
 
       const xml = diagram.xml || DEFAULT_XML;
       lastXmlRef.current = xml;
@@ -304,6 +318,7 @@ function BpmnEditorView({ diagram, identity, myName, onSave, onClose }: {
         modeler.get('canvas').zoom('fit-viewport');
       }).catch((e: any) => console.error('importXML error', e));
 
+      // Auto-save to SpacetimeDB on every change
       modeler.on('commandStack.changed', () => {
         setDirty(true);
         if (timerRef.current) clearTimeout(timerRef.current);
@@ -324,7 +339,12 @@ function BpmnEditorView({ diagram, identity, myName, onSave, onClose }: {
     return () => {
       destroyed = true;
       if (timerRef.current) clearTimeout(timerRef.current);
-      if (modelerRef.current) { modelerRef.current.detach(); modelerRef.current.destroy(); modelerRef.current = null; }
+      if (modelerRef.current) {
+        try { modelerRef.current.get('propertiesPanel').detach(); } catch (_) {}
+        modelerRef.current.detach();
+        modelerRef.current.destroy();
+        modelerRef.current = null;
+      }
     };
   }, [diagram.id.toString()]);
 
@@ -345,18 +365,38 @@ function BpmnEditorView({ diagram, identity, myName, onSave, onClose }: {
     if (xml) { lastXmlRef.current = xml; onSave(xml); setDirty(false); }
   };
 
+  const toggleXmlView = async () => {
+    if (!showXml && modelerRef.current) {
+      const { xml } = await modelerRef.current.saveXML({ format: true });
+      setXmlSource(xml || '');
+    }
+    setShowXml(!showXml);
+  };
+
   return (
     <div className="editor-full">
       <div className="toolbar">
-        <button onClick={onClose}>← Back</button>
+        <button className="btn-back" onClick={onClose}>← Back</button>
         <h2>{diagram.name}</h2>
         {dirty && <span className="dirty-badge">auto-saving...</span>}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="toolbar-right">
+          <button className="btn-small btn-xml" onClick={toggleXmlView}>{showXml ? 'Diagram' : 'XML'}</button>
           <span className="user-label">{myName}</span>
           <button className="btn-primary btn-small" onClick={manualSave} disabled={!dirty}>Save</button>
         </div>
       </div>
-      <div className="editor-canvas" ref={containerRef} />
+      <div className="editor-body">
+        {showXml ? (
+          <div className="xml-view">
+            <textarea value={xmlSource} readOnly spellCheck={false} />
+          </div>
+        ) : (
+          <>
+            <div className="diagram-container" ref={diagramRef} />
+            <div className="properties-panel-container" ref={propertiesPanelRef} />
+          </>
+        )}
+      </div>
     </div>
   );
 }

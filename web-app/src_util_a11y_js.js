@@ -1,0 +1,22 @@
+"use strict";
+/*
+ * ATTENTION: An "eval-source-map" devtool has been used.
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file with attached SourceMaps in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+(self["webpackChunkcamunda_modeler_client"] = self["webpackChunkcamunda_modeler_client"] || []).push([["src_util_a11y_js"],{
+
+/***/ "./src/util/a11y.js"
+/*!**************************!*\
+  !*** ./src/util/a11y.js ***!
+  \**************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+eval("{__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   loadA11yHelper: () => (/* binding */ loadA11yHelper)\n/* harmony export */ });\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ \"./node_modules/react/index.js\");\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);\n/* harmony import */ var react_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react-dom */ \"./node_modules/react-dom/index.js\");\n/**\n * Copyright Camunda Services GmbH and/or licensed to Camunda Services GmbH\n * under one or more contributor license agreements. See the NOTICE file\n * distributed with this work for additional information regarding copyright\n * ownership.\n *\n * Camunda licenses this file to you under the MIT; you may not use this file\n * except in compliance with the MIT License.\n */\n\n\n\nconst DEFAULT_TAGS = ['wcag2a', 'wcag21a'];\nasync function loadA11yHelper() {\n  // TODO(@barmac): remove or replace when upgraded to React 18\n  const axe = await __webpack_require__.e(/*! import() */ \"vendors-node_modules_axe-core_react_dist_index_mjs\").then(__webpack_require__.bind(__webpack_require__, /*! @axe-core/react */ \"../node_modules/@axe-core/react/dist/index.mjs\"));\n  axe.default((react__WEBPACK_IMPORTED_MODULE_0___default()), react_dom__WEBPACK_IMPORTED_MODULE_1__, 1000, {\n    runOnly: DEFAULT_TAGS\n  });\n}//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvdXRpbC9hMTF5LmpzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7QUFBQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7O0FBRTBCO0FBQ087QUFFakMsTUFBTUUsWUFBWSxHQUFHLENBQUUsUUFBUSxFQUFFLFNBQVMsQ0FBRTtBQUVyQyxlQUFlQyxjQUFjQSxDQUFBLEVBQUc7RUFFckM7RUFDQSxNQUFNQyxHQUFHLEdBQUcsTUFBTSx3TkFBeUI7RUFDM0NBLEdBQUcsQ0FBQ0MsT0FBTyxDQUFDTCw4Q0FBSyxFQUFFQyxzQ0FBUSxFQUFFLElBQUksRUFBRTtJQUNqQ0ssT0FBTyxFQUFFSjtFQUNYLENBQUMsQ0FBQztBQUNKIiwic291cmNlcyI6WyJ3ZWJwYWNrOi8vY2FtdW5kYS1tb2RlbGVyLWNsaWVudC8uL3NyYy91dGlsL2ExMXkuanM/Yjg5NCJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIENvcHlyaWdodCBDYW11bmRhIFNlcnZpY2VzIEdtYkggYW5kL29yIGxpY2Vuc2VkIHRvIENhbXVuZGEgU2VydmljZXMgR21iSFxuICogdW5kZXIgb25lIG9yIG1vcmUgY29udHJpYnV0b3IgbGljZW5zZSBhZ3JlZW1lbnRzLiBTZWUgdGhlIE5PVElDRSBmaWxlXG4gKiBkaXN0cmlidXRlZCB3aXRoIHRoaXMgd29yayBmb3IgYWRkaXRpb25hbCBpbmZvcm1hdGlvbiByZWdhcmRpbmcgY29weXJpZ2h0XG4gKiBvd25lcnNoaXAuXG4gKlxuICogQ2FtdW5kYSBsaWNlbnNlcyB0aGlzIGZpbGUgdG8geW91IHVuZGVyIHRoZSBNSVQ7IHlvdSBtYXkgbm90IHVzZSB0aGlzIGZpbGVcbiAqIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIE1JVCBMaWNlbnNlLlxuICovXG5cbmltcG9ydCBSZWFjdCBmcm9tICdyZWFjdCc7XG5pbXBvcnQgUmVhY3RET00gZnJvbSAncmVhY3QtZG9tJztcblxuY29uc3QgREVGQVVMVF9UQUdTID0gWyAnd2NhZzJhJywgJ3djYWcyMWEnIF07XG5cbmV4cG9ydCBhc3luYyBmdW5jdGlvbiBsb2FkQTExeUhlbHBlcigpIHtcblxuICAvLyBUT0RPKEBiYXJtYWMpOiByZW1vdmUgb3IgcmVwbGFjZSB3aGVuIHVwZ3JhZGVkIHRvIFJlYWN0IDE4XG4gIGNvbnN0IGF4ZSA9IGF3YWl0IGltcG9ydCgnQGF4ZS1jb3JlL3JlYWN0Jyk7XG4gIGF4ZS5kZWZhdWx0KFJlYWN0LCBSZWFjdERPTSwgMTAwMCwge1xuICAgIHJ1bk9ubHk6IERFRkFVTFRfVEFHU1xuICB9KTtcbn1cbiJdLCJuYW1lcyI6WyJSZWFjdCIsIlJlYWN0RE9NIiwiREVGQVVMVF9UQUdTIiwibG9hZEExMXlIZWxwZXIiLCJheGUiLCJkZWZhdWx0IiwicnVuT25seSJdLCJzb3VyY2VSb290IjoiIn0=\n//# sourceURL=webpack-internal:///./src/util/a11y.js\n\n}");
+
+/***/ }
+
+}]);

@@ -62,12 +62,8 @@
   }
 
   function workspaceRestore(defaultConfig) {
-    try {
-      const raw = localStorage.getItem(STORAGE_PREFIX + 'workspace');
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    // Return valid default with empty files array
-    return defaultConfig || { files: [], activeFile: -1, layout: {} };
+    // Always start empty - files will be opened via menu actions after startup
+    return { files: [], activeFile: -1, layout: {} };
   }
 
   async function handleSend(event, ...args) {
@@ -106,6 +102,10 @@
           lastModified: now,
           name: file.name || filePath.split('/').pop()
         });
+        // Save to SpacetimeDB if available
+        if (typeof window._saveToSpacetimeDB === 'function' && file.contents) {
+          window._saveToSpacetimeDB(file.contents);
+        }
         return {
           ...file,
           path: filePath,
@@ -371,6 +371,9 @@
     called = true;
     return { metadata, flags, plugins, backend };
   };
+
+  // Expose internals for dashboard integration
+  window._webBackend = { fileStore, emit };
 
   console.info('[Web Shim] Camunda Modeler web backend initialized');
 })();

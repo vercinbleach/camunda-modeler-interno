@@ -1,6 +1,9 @@
 @import 'camunda-bpmn-js/dist/assets/diagram-js.css';
 @import 'camunda-bpmn-js/dist/assets/bpmn-js.css';
 @import 'camunda-bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
+@import 'camunda-bpmn-js/dist/assets/properties-panel.css';
+@import 'camunda-bpmn-js/dist/assets/element-templates.css';
+@import 'camunda-bpmn-js/dist/assets/color-picker.css';
 
 * { margin:0; padding:0; box-sizing:border-box; }
 :root { --primary:#0d47a1; --bg:#f5f7fa; --sidebar:#1e293b; --border:#e2e8f0; --danger:#dc2626; --warn:#d97706; --ok:#16a34a; }
@@ -67,6 +70,26 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 
 /* Editor */
 .editor-full { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
-.editor-canvas { flex:1; position:relative; }
+.editor-body { flex:1; display:flex; flex-direction:row; overflow:hidden; }
+.diagram-container { flex:1; position:relative; }
+.properties-panel-container {
+  width:320px; flex-shrink:0; overflow-y:auto;
+  border-left:1px solid var(--border); background:#fff;
+}
+.properties-panel-container .bio-properties-panel {
+  --font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --font-family-monospace: 'Courier New',monospace;
+  background:#fff;
+}
 .dirty-badge { font-size:12px; color:var(--warn); }
 .user-label { font-size:12px; color:#64748b; }
+.btn-back { padding:5px 12px; border:1px solid var(--border); border-radius:6px; background:#fff; cursor:pointer; font-size:13px; }
+.btn-xml { background:#e2e8f0!important; color:#1e293b!important; }
+.toolbar-right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+/* XML View */
+.xml-view { flex:1; display:flex; }
+.xml-view textarea {
+  flex:1; padding:16px; font-family:'Courier New',monospace; font-size:13px;
+  border:none; resize:none; background:#f8f9fa; color:#1e293b; outline:none; line-height:1.5;
+}

@@ -3,56 +3,494 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>Camunda Modeler (Web)</title>
+  <title>Camunda 7 Collaborator</title>
   <style>
-    body, html {
-      --color-grey-225-10-15: hsl(225, 10%, 15%);
-      height: 100%;
-      width: 100%;
-      padding: 0;
-      margin: 0;
-    }
-    #root {
-      width: 100%;
-      height: 100%;
-    }
-    .spinner-border {
-      position: absolute;
-      top: 0; right: 0; bottom: 0; left: 0;
-      background: white;
-      z-index: 200;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .spinner-border.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-    @keyframes spinner-keyframe {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .spinner-border:after {
-      width: 22px; height: 22px;
-      border: 4px solid var(--color-grey-225-10-15);
-      content: " ";
-      display: block;
-      border-radius: 50%;
-      border-color: var(--color-grey-225-10-15) var(--color-grey-225-10-15) var(--color-grey-225-10-15) transparent;
-      animation: spinner-keyframe 0.7s linear infinite;
-    }
-    .spinner-border-global { z-index: 201; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--primary:#0d47a1;--bg:#f5f7fa;--sidebar:#1e293b;--border:#e2e8f0;--danger:#dc2626;--ok:#16a34a;--color-grey-225-10-15:hsl(225,10%,15%)}
+    body,html{height:100%;width:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg)}
+    #root{width:100%;height:100%}
+
+    /* Dashboard styles */
+    #dashboard{display:none;height:100vh}
+    #dashboard.active{display:flex}
+    .db-sidebar{width:250px;background:var(--sidebar);color:#e2e8f0;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+    .db-sidebar h1{font-size:17px;color:#fff;padding:20px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .db-section{padding:12px 16px}
+    .db-section h3{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:6px}
+    .folder-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px}
+    .folder-item:hover{background:rgba(255,255,255,.1)}
+    .folder-item.active{background:var(--primary);color:#fff}
+    .icon-btn{background:none;border:none;color:inherit;cursor:pointer;font-size:13px;padding:2px 4px}
+    .db-footer{margin-top:auto;padding:14px 16px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;font-size:13px}
+    .avatar{width:30px;height:30px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:13px}
+    .db-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .db-toolbar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border)}
+    .db-toolbar h2{font-size:16px}
+    .btn{padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:12px;background:var(--border)}
+    .btn-primary{background:var(--primary)!important;color:#fff!important}
+    .btn-danger{background:var(--danger)!important;color:#fff!important}
+    .btn-full{width:100%;margin-top:6px}
+    .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:#64748b}
+    .empty p:first-child{font-size:48px;margin-bottom:12px}
+    .diagram-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;padding:20px;overflow-y:auto}
+    .diagram-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer}
+    .diagram-card:hover{border-color:var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .diagram-card h4{font-size:13px;margin:6px 0 4px}
+    .meta{font-size:11px;color:#64748b;margin-bottom:8px}
+    .share-bar{padding:10px 20px;border-top:1px solid var(--border);background:#fff;font-size:12px}
+    .online-user{font-size:13px;padding:3px 0}
+    .badge{font-size:10px;background:rgba(255,255,255,.2);padding:2px 6px;border-radius:8px;margin-left:4px}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000}
+    .modal{background:#fff;border-radius:12px;padding:24px;width:380px}
+    .modal h3{margin-bottom:14px;font-size:17px}
+    .modal input,.modal select{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;margin-bottom:10px}
+    .modal-btns{display:flex;gap:8px;justify-content:flex-end}
+
+    /* Auth */
+    .auth-page{display:none;height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#0a3680,#1565c0)}
+    .auth-page.active{display:flex}
+    .auth-card{background:#fff;border-radius:16px;padding:40px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .auth-card h1{font-size:22px;color:var(--primary);margin-bottom:8px}
+    .auth-card p{color:#64748b;margin-bottom:20px;font-size:14px}
+    .auth-card input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px}
+    .auth-card button{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer}
+
+    /* Loading */
+    .connecting{display:flex;height:100vh;align-items:center;justify-content:center;font-size:18px;color:#64748b}
+
+    /* Editor (Camunda Modeler) */
+    #modeler-container{display:none;height:100vh;width:100%;position:relative}
+    #modeler-container.active{display:block}
+    .spinner-border{position:absolute;top:0;right:0;bottom:0;left:0;background:white;z-index:200;display:flex;justify-content:center;align-items:center}
+    .spinner-border.hidden{opacity:0;pointer-events:none}
+    @keyframes spinner-keyframe{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    .spinner-border:after{width:22px;height:22px;border:4px solid var(--color-grey-225-10-15);content:" ";display:block;border-radius:50%;border-color:var(--color-grey-225-10-15) var(--color-grey-225-10-15) var(--color-grey-225-10-15) transparent;animation:spinner-keyframe .7s linear infinite}
+    #back-to-dashboard{position:fixed;top:8px;left:8px;z-index:300;padding:6px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    #back-to-dashboard:hover{background:#f0f0f0}
   </style>
 </head>
 <body>
-  <div class="spinner-border spinner-border-global"></div>
-  <div id="root"></div>
 
-  <!-- Web backend shim - MUST load before bundle.js -->
-  <script src="web-shim.js"></script>
+  <!-- 1. Connecting screen -->
+  <div id="connecting" class="connecting">Connecting to SpacetimeDB...</div>
 
-  <!-- Original Camunda Modeler client bundle (built from /workspace/client/) -->
-  <script src="bundle.js"></script>
+  <!-- 2. Auth screen -->
+  <div id="auth" class="auth-page">
+    <div class="auth-card">
+      <h1>Camunda 7 Collaborator</h1>
+      <p>Set your name to get started</p>
+      <input id="auth-name" placeholder="Your name" autofocus />
+      <button id="auth-btn">Continue</button>
+    </div>
+  </div>
+
+  <!-- 3. Dashboard -->
+  <div id="dashboard">
+    <div class="db-sidebar">
+      <h1>Camunda 7 Collab</h1>
+      <div class="db-section">
+        <h3>MY FOLDERS</h3>
+        <div id="my-folders"></div>
+        <button class="btn btn-primary btn-full" id="new-folder-btn">+ New Folder</button>
+      </div>
+      <div class="db-section" id="shared-section" style="display:none">
+        <h3>SHARED WITH ME</h3>
+        <div id="shared-folders"></div>
+      </div>
+      <div class="db-section">
+        <h3 id="online-title">ONLINE (0)</h3>
+        <div id="online-users"></div>
+      </div>
+      <div class="db-footer">
+        <div class="avatar" id="user-avatar">?</div>
+        <span id="user-name-display">...</span>
+      </div>
+    </div>
+    <div class="db-main">
+      <div class="db-toolbar">
+        <h2 id="folder-title">Select a folder</h2>
+        <button class="btn" id="share-btn" style="display:none">Share</button>
+        <button class="btn btn-primary" id="new-diagram-btn" style="display:none">+ New Diagram</button>
+      </div>
+      <div id="folder-content" class="empty">
+        <p>📁</p>
+        <h3 id="welcome-msg">Welcome!</h3>
+        <p>Select or create a folder to start.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Modeler container -->
+  <div id="modeler-container">
+    <button id="back-to-dashboard">← Back to Dashboard</button>
+    <div class="spinner-border spinner-border-global"></div>
+    <div id="root"></div>
+  </div>
+
+  <!-- Modal template -->
+  <div id="modal-root"></div>
+
+  <!-- SpacetimeDB + Dashboard logic -->
+  <script type="module">
+    const STDB_HOST = 'ws://localhost:3000';
+    const DB_NAME = 'web-app-z21ml';
+    const TOKEN_KEY = `stdb_token_${DB_NAME}`;
+
+    let conn = null;
+    let myIdentity = null;
+    let myName = null;
+    let selectedFolderId = null;
+    let currentDiagramId = null;
+
+    // State
+    let users = [], folders = [], shares = [], diagrams = [];
+
+    // ── SpacetimeDB Connection ──────────────────────────────────────
+    async function connectToSpacetimeDB() {
+      const { DbConnection } = await import('./src/module_bindings/index.ts');
+
+      const token = localStorage.getItem(TOKEN_KEY) || undefined;
+
+      conn = DbConnection.builder()
+        .withUri(STDB_HOST)
+        .withDatabaseName(DB_NAME)
+        .withToken(token)
+        .onConnect((c, identity, tok) => {
+          localStorage.setItem(TOKEN_KEY, tok);
+          myIdentity = identity;
+          conn = c;
+
+          c.subscriptionBuilder()
+            .onApplied(() => {
+              refreshAll();
+              const me = users.find(u => u.identity.toHexString() === myIdentity.toHexString());
+              if (me && me.name) {
+                myName = me.name;
+                showDashboard();
+              } else {
+                showAuth();
+              }
+            })
+            .subscribeToAllTables();
+        })
+        .onConnectError((_, e) => {
+          document.getElementById('connecting').textContent = 'Failed to connect: ' + e.message;
+        })
+        .build();
+
+      // Listen for changes
+      setInterval(refreshAll, 500);
+    }
+
+    function refreshAll() {
+      if (!conn) return;
+      users = [...conn.db.user.iter()];
+      folders = [...conn.db.folder.iter()];
+      shares = [...conn.db.folder_share.iter()];
+      diagrams = [...conn.db.diagram.iter()];
+      renderDashboard();
+
+      // Real-time diagram sync
+      if (currentDiagramId !== null && window._modelerRef) {
+        const d = diagrams.find(x => x.id === currentDiagramId);
+        if (d && d.xml !== window._lastSavedXml &&
+            d.updatedBy.toHexString() !== myIdentity.toHexString()) {
+          window._lastSavedXml = d.xml;
+          window._modelerRef.importXML(d.xml).catch(e => console.warn('sync err', e));
+        }
+      }
+    }
+
+    function myHex() { return myIdentity?.toHexString() || ''; }
+    function userName(identHex) {
+      const u = users.find(u => u.identity.toHexString() === identHex);
+      return u?.name || identHex.substring(0, 8);
+    }
+
+    // ── Screen Management ───────────────────────────────────────────
+    function hideAll() {
+      document.getElementById('connecting').style.display = 'none';
+      document.getElementById('auth').classList.remove('active');
+      document.getElementById('dashboard').classList.remove('active');
+      document.getElementById('modeler-container').classList.remove('active');
+    }
+
+    function showAuth() {
+      hideAll();
+      document.getElementById('auth').classList.add('active');
+    }
+
+    function showDashboard() {
+      hideAll();
+      document.getElementById('dashboard').classList.add('active');
+      currentDiagramId = null;
+      renderDashboard();
+    }
+
+    function showModeler(diagramId) {
+      hideAll();
+      document.getElementById('modeler-container').classList.add('active');
+      currentDiagramId = diagramId;
+      loadModeler(diagramId);
+    }
+
+    // ── Dashboard Rendering ─────────────────────────────────────────
+    function renderDashboard() {
+      if (!myIdentity || !myName) return;
+      if (!document.getElementById('dashboard').classList.contains('active')) return;
+      const hex = myHex();
+
+      // User info
+      document.getElementById('user-avatar').textContent = (myName || '?')[0]?.toUpperCase();
+      document.getElementById('user-name-display').textContent = myName || 'Unknown';
+
+      // My folders
+      const myFolders = folders.filter(f => f.ownerIdentity.toHexString() === hex);
+      const myFoldersEl = document.getElementById('my-folders');
+      myFoldersEl.innerHTML = myFolders.map(f => `
+        <div class="folder-item ${selectedFolderId === f.id ? 'active' : ''}" data-folder-id="${f.id}">
+          <span>📁 ${f.name}</span>
+          <button class="icon-btn" data-delete-folder="${f.id}">🗑</button>
+        </div>
+      `).join('');
+
+      // Shared folders
+      const sharedWithMe = shares.filter(s => s.sharedWithIdentity.toHexString() === hex);
+      const sharedSection = document.getElementById('shared-section');
+      if (sharedWithMe.length > 0) {
+        sharedSection.style.display = '';
+        document.getElementById('shared-folders').innerHTML = sharedWithMe.map(s => {
+          const f = folders.find(x => x.id === s.folderId);
+          if (!f) return '';
+          return `<div class="folder-item ${selectedFolderId === f.id ? 'active' : ''}" data-folder-id="${f.id}">
+            <span>📂 ${f.name}</span><span class="badge">${s.permission}</span>
+          </div>`;
+        }).join('');
+      } else {
+        sharedSection.style.display = 'none';
+      }
+
+      // Online users
+      const online = users.filter(u => u.online);
+      document.getElementById('online-title').textContent = `ONLINE (${online.length})`;
+      document.getElementById('online-users').innerHTML = online.map(u =>
+        `<div class="online-user">🟢 ${u.name || u.identity.toHexString().substring(0,8)}${u.identity.toHexString() === hex ? ' (you)' : ''}</div>`
+      ).join('');
+
+      // Folder content
+      const selFolder = folders.find(f => f.id === selectedFolderId);
+      const isOwner = selFolder?.ownerIdentity.toHexString() === hex;
+      document.getElementById('folder-title').textContent = selFolder ? selFolder.name : 'Select a folder';
+      document.getElementById('share-btn').style.display = selFolder && isOwner ? '' : 'none';
+      document.getElementById('new-diagram-btn').style.display = selFolder ? '' : 'none';
+
+      const contentEl = document.getElementById('folder-content');
+      if (!selFolder) {
+        contentEl.className = 'empty';
+        contentEl.innerHTML = `<p>📁</p><h3 id="welcome-msg">Welcome, ${myName}!</h3><p>Select or create a folder to start.</p>`;
+      } else {
+        const folderDiagrams = diagrams.filter(d => d.folderId === selectedFolderId);
+        if (folderDiagrams.length === 0) {
+          contentEl.className = 'empty';
+          contentEl.innerHTML = '<p>📄</p><h3>No diagrams yet</h3>';
+        } else {
+          contentEl.className = 'diagram-grid';
+          contentEl.innerHTML = folderDiagrams.map(d => `
+            <div class="diagram-card" data-open-diagram="${d.id}">
+              <div style="font-size:32px">📊</div>
+              <h4>${d.name}</h4>
+              <p class="meta">by ${userName(d.ownerIdentity.toHexString())}</p>
+              <button class="btn btn-danger" data-delete-diagram="${d.id}" style="font-size:11px">Delete</button>
+            </div>
+          `).join('');
+        }
+      }
+    }
+
+    // ── Modeler Loading ─────────────────────────────────────────────
+    let modelerLoaded = false;
+
+    async function loadModeler(diagramId) {
+      const d = diagrams.find(x => x.id === diagramId);
+      if (!d) return;
+
+      window._lastSavedXml = d.xml;
+      window._currentDiagramId = diagramId;
+
+      if (!modelerLoaded) {
+        // First time: inject web-shim + bundle
+        await injectModeler(d.xml);
+        modelerLoaded = true;
+      } else {
+        // Already loaded: just import new XML
+        if (window._modelerRef) {
+          await window._modelerRef.importXML(d.xml);
+          window._modelerRef.get('canvas').zoom('fit-viewport');
+        }
+      }
+    }
+
+    function injectModeler(initialXml) {
+      return new Promise((resolve) => {
+        window._saveToSpacetimeDB = (xml) => {
+          if (currentDiagramId !== null && conn) {
+            window._lastSavedXml = xml;
+            conn.reducers.updateDiagramXml({ diagramId: currentDiagramId, xml });
+          }
+        };
+
+        if (!modelerLoaded) {
+          // First time: load web-shim then bundle
+          const shimScript = document.createElement('script');
+          shimScript.src = 'web-shim.js';
+          shimScript.onload = () => {
+            const bundleScript = document.createElement('script');
+            bundleScript.src = 'bundle.js';
+            bundleScript.onload = () => {
+              // Wait for Camunda Modeler to fully initialize, then open file
+              setTimeout(() => {
+                openFileInModeler(initialXml);
+                resolve();
+              }, 3000);
+            };
+            document.body.appendChild(bundleScript);
+          };
+          document.body.appendChild(shimScript);
+        } else {
+          openFileInModeler(initialXml);
+          resolve();
+        }
+      });
+    }
+
+    function openFileInModeler(xml) {
+      // Store the file in the shim's file store via the backend
+      if (window._webBackend) {
+        const path = '/collab/diagram_' + currentDiagramId + '.bpmn';
+        window._webBackend.fileStore.set(path, {
+          contents: xml,
+          lastModified: Date.now(),
+          name: 'diagram.bpmn'
+        });
+        // Emit client:open-files event to open the file in the Modeler
+        window._webBackend.emit('client:open-files', {}, [
+          { path, contents: xml, name: 'diagram.bpmn', lastModified: Date.now() }
+        ]);
+      }
+    }
+
+    // ── Modal Helper ────────────────────────────────────────────────
+    function showModal(title, fields, onSubmit) {
+      const root = document.getElementById('modal-root');
+      const fieldsHtml = fields.map(f =>
+        f.type === 'select'
+          ? `<select id="modal-${f.name}">${f.options.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}</select>`
+          : `<input id="modal-${f.name}" placeholder="${f.placeholder || ''}" autofocus />`
+      ).join('');
+
+      root.innerHTML = `
+        <div class="modal-overlay" id="modal-overlay">
+          <div class="modal">
+            <h3>${title}</h3>
+            ${fieldsHtml}
+            <div class="modal-btns">
+              <button class="btn" id="modal-cancel">Cancel</button>
+              <button class="btn btn-primary" id="modal-ok">OK</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('modal-cancel').onclick = () => { root.innerHTML = ''; };
+      document.getElementById('modal-overlay').onclick = (e) => { if (e.target.id === 'modal-overlay') root.innerHTML = ''; };
+      document.getElementById('modal-ok').onclick = () => {
+        const values = {};
+        fields.forEach(f => { values[f.name] = document.getElementById('modal-' + f.name).value; });
+        onSubmit(values);
+        root.innerHTML = '';
+      };
+      // Enter key
+      root.querySelector('input,select')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('modal-ok').click();
+      });
+    }
+
+    // ── Event Handlers ──────────────────────────────────────────────
+    // Auth
+    document.getElementById('auth-btn').onclick = () => {
+      const name = document.getElementById('auth-name').value.trim();
+      if (name && conn) {
+        conn.reducers.setName({ name });
+        myName = name;
+        setTimeout(showDashboard, 300);
+      }
+    };
+    document.getElementById('auth-name').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('auth-btn').click();
+    });
+
+    // New folder
+    document.getElementById('new-folder-btn').onclick = () => {
+      showModal('New Folder', [{ name: 'name', placeholder: 'Folder name' }], (v) => {
+        if (v.name && conn) conn.reducers.createFolder({ name: v.name });
+      });
+    };
+
+    // New diagram
+    document.getElementById('new-diagram-btn').onclick = () => {
+      const DEFAULT_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn"><process id="Process_1" isExecutable="true"><startEvent id="StartEvent_1" /></process><bpmndi:BPMNDiagram id="BPMNDiagram_1"><bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1"><bpmndi:BPMNShape id="S1" bpmnElement="StartEvent_1"><dc:Bounds x="180" y="160" width="36" height="36" /></bpmndi:BPMNShape></bpmndi:BPMNPlane></bpmndi:BPMNDiagram></definitions>`;
+
+      showModal('New BPMN Diagram', [{ name: 'name', placeholder: 'Diagram name' }], (v) => {
+        if (v.name && conn && selectedFolderId !== null) {
+          conn.reducers.createDiagram({ folderId: selectedFolderId, name: v.name, xml: DEFAULT_XML });
+        }
+      });
+    };
+
+    // Share folder
+    document.getElementById('share-btn').onclick = () => {
+      showModal('Share Folder', [
+        { name: 'targetName', placeholder: 'Username' },
+        { name: 'permission', type: 'select', options: [{ value: 'write', label: 'Write' }, { value: 'read', label: 'Read' }] }
+      ], (v) => {
+        if (v.targetName && conn && selectedFolderId !== null) {
+          conn.reducers.shareFolder({ folderId: selectedFolderId, targetName: v.targetName, permission: v.permission });
+        }
+      });
+    };
+
+    // Back to dashboard
+    document.getElementById('back-to-dashboard').onclick = showDashboard;
+
+    // Click delegation for folder/diagram items
+    document.addEventListener('click', (e) => {
+      const folderEl = e.target.closest('[data-folder-id]');
+      if (folderEl && !e.target.closest('[data-delete-folder]')) {
+        selectedFolderId = BigInt(folderEl.dataset.folderId);
+        renderDashboard();
+        return;
+      }
+      const delFolder = e.target.closest('[data-delete-folder]');
+      if (delFolder && conn) {
+        if (confirm('Delete this folder?')) conn.reducers.deleteFolder({ folderId: BigInt(delFolder.dataset.deleteFolder) });
+        return;
+      }
+      const openDiagram = e.target.closest('[data-open-diagram]');
+      if (openDiagram && !e.target.closest('[data-delete-diagram]')) {
+        showModeler(BigInt(openDiagram.dataset.openDiagram));
+        return;
+      }
+      const delDiagram = e.target.closest('[data-delete-diagram]');
+      if (delDiagram && conn) {
+        e.stopPropagation();
+        if (confirm('Delete this diagram?')) conn.reducers.deleteDiagram({ diagramId: BigInt(delDiagram.dataset.deleteDiagram) });
+        return;
+      }
+    });
+
+    // ── Start ───────────────────────────────────────────────────────
+    connectToSpacetimeDB();
+  </script>
 </body>
 </html>
