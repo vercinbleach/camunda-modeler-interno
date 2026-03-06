@@ -227,14 +227,20 @@
         return;
 
       case 'client:ready': {
-        // Electron emits client:started after receiving client:ready
-        // with workspace restore data and any CLI files
+        // Flow mirrors Electron main process:
+        // 1. If pending files, emit client:open-files with file OBJECTS (not paths)
+        // 2. Then emit client:started (signal to batch-open)
         setTimeout(() => {
-          emit('client:started', {}, {
-            files: [],
-            activeFile: -1,
-            layout: {}
-          });
+          const pendingXml = window._pendingDiagramXml;
+          if (pendingXml) {
+            const filePath = '/collab/diagram.bpmn';
+            const now = Date.now();
+            const fileObj = { path: filePath, contents: pendingXml, name: 'diagram.bpmn', lastModified: now };
+            fileStore.set(filePath, { contents: pendingXml, lastModified: now, name: 'diagram.bpmn' });
+            emit('client:open-files', {}, [fileObj]);
+            window._pendingDiagramXml = null;
+          }
+          emit('client:started');
         }, 100);
         return;
       }
