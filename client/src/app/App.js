@@ -71,6 +71,7 @@ import * as css from './App.less';
 import Notifications, { NOTIFICATION_TYPES } from './notifications';
 import { RecentTabs } from './RecentTabs';
 import { EventsContext } from './EventsContext';
+import { SpacetimeDocumentSync, SpacetimeSyncStatus } from './spacetime-sync';
 
 const log = debug('App');
 
@@ -98,7 +99,8 @@ const INITIAL_STATE = {
   lintingState: {},
   logEntries: [],
   notifications: [],
-  currentModal: null
+  currentModal: null,
+  syncStatus: { state: 'disabled', pending: 0 }
 };
 
 /**
@@ -186,6 +188,11 @@ export class App extends PureComponent {
     });
 
     this.currentNotificationId = 0;
+
+    this.documentSync = new SpacetimeDocumentSync({
+      client: this.props.globals.spacetimeDB,
+      onStatusChange: syncStatus => this.setState({ syncStatus })
+    });
   }
 
   /**
@@ -425,6 +432,8 @@ export class App extends PureComponent {
     // trigger file changed in background
     tab = await this.checkFileChanged(tab);
 
+    tab = await this.loadSyncedDocument(tab);
+
     if (!this.isEmptyTab(tab)) {
       const navigationHistory = this.navigationHistory;
 
@@ -455,6 +464,11 @@ export class App extends PureComponent {
    * @return {Promise<boolean>} resolved to true if tab can be safely closed
    */
   saveBeforeClose = async (tab) => {
+    if (this.documentSync.isEnabled()) {
+      await this.documentSync.flushPendingEvents();
+      return true;
+    }
+
     const { file } = tab;
 
     const { name } = file;
@@ -1002,6 +1016,34 @@ export class App extends PureComponent {
     this.handleWarning(warning, tab);
   };
 
+  async loadSyncedDocument(tab) {
+    if (!this.documentSync.isEnabled() || this.isEmptyTab(tab)) {
+      return tab;
+    }
+
+    const document = await this.documentSync.loadDocument(tab.file?.path || tab.file?.name || tab.id);
+
+    if (!document) {
+      return tab;
+    }
+
+    const latestEvent = document.events[ document.events.length - 1 ];
+    const xml = latestEvent?.xml || document.snapshot?.xml;
+
+    if (!xml || xml === tab.file?.contents) {
+      tab.revision = document.revision;
+      return tab;
+    }
+
+    return this.updateTab(tab, {
+      revision: document.revision,
+      file: {
+        ...tab.file,
+        contents: xml
+      }
+    }, this.setDirty(tab, false));
+  }
+
   /**
    * Handle tab changed.
    *
@@ -1009,7 +1051,7 @@ export class App extends PureComponent {
    *
    * @return {Function} tab changed callback
    */
-  handleTabChanged = (tab) => (properties = {}) => {
+  handleTabChanged = (tab) => async (properties = {}) => {
 
     let {
       tabState
@@ -1018,7 +1060,24 @@ export class App extends PureComponent {
     let dirtyState = {};
 
     if ('dirty' in properties) {
+      if (properties.dirty && this.documentSync.isBlocked(tab.file?.path || tab.file?.name || tab.id)) {
+        this.displayNotification({
+          type: 'error',
+          title: 'Revision diverged',
+          content: 'Editing is blocked. Reload the document or merge the remote changes before continuing.',
+          duration: 0
+        });
+
+        return;
+      }
+
       dirtyState = this.setDirty(tab, properties.dirty);
+
+      if (properties.dirty && this.documentSync.isEnabled() && this.tabRef.current) {
+        const xml = await this.tabRef.current.triggerAction('save');
+        await this.documentSync.recordLocalChange(tab, xml);
+        dirtyState = this.setDirty(tab, false);
+      }
     }
 
     this.setState({
@@ -1620,6 +1679,14 @@ export class App extends PureComponent {
 
     await this.triggerAction('saveTab.start');
 
+    if (this.documentSync.isEnabled()) {
+      await this.showTab(tab);
+      const contents = await this.getActiveTabContents();
+      await this.documentSync.recordLocalChange(tab, contents);
+      this.setState(this.setDirty(tab, false));
+      return tab;
+    }
+
     options = options || {};
 
     // do as long as it was successful or cancelled
@@ -2049,6 +2116,10 @@ export class App extends PureComponent {
     if (action === 'open-diagram') {
       const { path } = options;
 
+      if (this.documentSync.isEnabled() && !path) {
+        return this.createDiagram(options.type || 'bpmn');
+      }
+
       if (path) {
         return this.readFileFromPath(path).then(file => this.openFiles([ file ]));
       }
@@ -2069,6 +2140,10 @@ export class App extends PureComponent {
     }
 
     if (action === 'save-as') {
+      if (this.documentSync.isEnabled()) {
+        return false;
+      }
+
       return this.saveTab(activeTab, { saveAs: true });
     }
 
@@ -2454,6 +2529,8 @@ export class App extends PureComponent {
                 </PanelContainer>
 
                 <StatusBar />
+
+                <SpacetimeSyncStatus status={ this.state.syncStatus } />
 
                 <PluginsRoot
                   app={ this }
