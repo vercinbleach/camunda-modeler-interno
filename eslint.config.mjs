@@ -5,7 +5,10 @@ const files = {
   client: [
     'client/src/**/*.js',
     'client/test/**/*.js',
-    'resources/plugins/*/client/**/*.js'
+    'resources/plugins/*/client/**/*.js',
+    'web/src/**/*.js',
+    'web/src/**/*.jsx',
+    'web/vite.config.js'
   ],
   sources: [
     'app/*.js',
@@ -25,7 +28,8 @@ const files = {
     'docs',
     'resources/plugins/*/dist',
     'resources/plugins/test-script-error/broken.js',
-    'tmp'
+    'tmp',
+    'web/dist'
   ]
 };
 

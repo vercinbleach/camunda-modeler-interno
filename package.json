@@ -32,14 +32,17 @@
     "release:rc": "npm run release -- --preid=rc",
     "test": "run-s *:test",
     "start": "run-s \"dev -- {@}\" --",
-    "link-dependencies": "node tasks/link-dependencies.js"
+    "link-dependencies": "node tasks/link-dependencies.js",
+    "web:dev": "npm run dev --workspace=web",
+    "web:build": "npm run build --workspace=web"
   },
   "author": "Camunda <http://camunda.com>",
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://github.com/camunda/camunda-modeler",
   "workspaces": [
     "app",
-    "client"
+    "client",
+    "web"
   ],
   "repository": {
     "type": "git",
