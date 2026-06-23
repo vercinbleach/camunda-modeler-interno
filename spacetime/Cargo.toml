@@ -1,0 +1,18 @@
+[package]
+name = "camunda-modeler-spacetime"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+log = "0.4"
+spacetimedb = "=1.0.0"
+spacetimedb-bindings-macro = "=1.0.0"
+spacetimedb-bindings-sys = "=1.0.0"
+spacetimedb-lib = "=1.0.0"
+spacetimedb-primitives = "=1.0.0"
+spacetimedb-sats = "=1.0.0"
+spacetimedb-data-structures = "=1.0.0"
+spacetimedb-metrics = "=1.0.0"
