@@ -1,0 +1,69 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f2933;
+}
+
+button {
+  border: 0;
+  border-radius: 4px;
+  background: #0f62fe;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 8px 14px;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.app,
+.editorShell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.editorToolbar,
+.editorStatus {
+  align-items: center;
+  background: #f7f8fa;
+  border-bottom: 1px solid #d7dce1;
+  display: flex;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 16px;
+}
+
+.editorStatus {
+  border-bottom: 0;
+  border-top: 1px solid #d7dce1;
+  font-size: 13px;
+  min-height: 32px;
+}
+
+.editorCanvas {
+  flex: 1;
+  min-height: 0;
+}
+
+.emptyState {
+  margin: 48px auto;
+  max-width: 760px;
+  padding: 0 24px;
+}
+
+.emptyState code {
+  background: #eef2f6;
+  border-radius: 4px;
+  display: inline-block;
+  padding: 6px 8px;
+}
