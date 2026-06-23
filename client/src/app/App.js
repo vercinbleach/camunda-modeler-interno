@@ -892,7 +892,9 @@ export class App extends PureComponent {
             } else {
               const providerNames = tabsProvider.getProviderNames();
 
-              await dialog.showOpenFileErrorDialog(getOpenFileErrorDialog({
+              const providerError = tabsProvider.getOpenFileError && tabsProvider.getOpenFileError(file);
+
+              await dialog.showOpenFileErrorDialog(providerError || getOpenFileErrorDialog({
                 name,
                 providerNames
               }));

@@ -18,18 +18,10 @@ import {
 
 import replaceIds from '@bpmn-io/replace-ids';
 
-import { Bot } from '@carbon/icons-react';
 
 import { Linter as BpmnLinter } from '@camunda/linting';
-import { FormLinter } from '@camunda/form-linting/lib/FormLinter';
 
 import bpmnDiagram from './tabs/bpmn/diagram.bpmn';
-import cloudBpmnDiagram from './tabs/cloud-bpmn/diagram.bpmn';
-import dmnDiagram from './tabs/dmn/diagram.dmn';
-import cloudDmnDiagram from './tabs/cloud-dmn/diagram.dmn';
-import form from './tabs/form/initial.form';
-import cloudForm from './tabs/form/initial-cloud.form';
-import rpaScript from './tabs/rpa/resources/initial.rpa';
 
 import {
   ENGINES
@@ -52,24 +44,14 @@ import {
 } from '../util';
 
 import Flags, {
-  DISABLE_DMN,
-  DISABLE_FORM,
-  DISABLE_ZEEBE,
-  DISABLE_PLATFORM,
   DISABLE_HTTL_HINT,
-  DEFAULT_HTTL,
-  DISABLE_RPA
+  DEFAULT_HTTL
 } from '../util/Flags';
 
 import BPMNIcon from '../../resources/icons/file-types/BPMN.svg';
-import DMNIcon from '../../resources/icons/file-types/DMN.svg';
-import FormIcon from '../../resources/icons/file-types/Form.svg';
 
 import { getDefaultVersion } from './tabs/EngineProfile';
 
-import { getCloudTemplates } from '../util/elementTemplates';
-import { CloudElementTemplatesLinterPlugin } from 'bpmn-js-element-templates';
-import { RPALinter } from '@camunda/rpa-integration';
 
 import { utmTag } from '../util/utmTag';
 
@@ -88,13 +70,6 @@ const C7_HELP_MENU = [
   {
     label: 'Camunda 8 Migration Guide',
     action: utmTag('https://docs.camunda.io/docs/guides/migrating-from-camunda-7/')
-  }
-];
-
-const DMN_HELP_MENU = [
-  {
-    label: 'DMN Tutorial',
-    action: utmTag('https://camunda.org/dmn/tutorial/')
   }
 ];
 
@@ -134,9 +109,6 @@ const NAMESPACE_URL_ZEEBE = 'http://camunda.org/schema/zeebe/1.0';
 
 const DEFAULT_PRIORITY = 1000;
 
-const HIGHER_PRIORITY = 1001;
-
-const formLinter = new FormLinter();
 
 /**
  * A provider that allows us to customize available tabs.
@@ -160,77 +132,6 @@ export default class TabsProvider {
           return null;
         }
       },
-      'cloud-bpmn': {
-        name: 'BPMN',
-        encoding: ENCODING_UTF8,
-        exports: {
-          png: EXPORT_PNG,
-          jpeg: EXPORT_JPEG,
-          svg: EXPORT_SVG
-        },
-        extensions: [ 'bpmn', 'xml' ],
-        priority: HIGHER_PRIORITY,
-        canOpen(file) {
-          const {
-            contents
-          } = file;
-
-          // (0) can open only BPMN files
-          if (parseDiagramType(contents) !== 'bpmn') {
-            return false;
-          }
-
-          // (1) detect execution platform
-          const executionPlatformDetails = parseExecutionPlatform(contents);
-
-          if (executionPlatformDetails) {
-            return [
-              'Camunda Cloud',
-              'Zeebe'
-            ].includes(executionPlatformDetails.executionPlatform);
-          }
-
-          // (2) detect zeebe namespace
-          const used = findNamespaceUsages(contents, NAMESPACE_URL_ZEEBE);
-
-          return !!used;
-        },
-        getComponent(options) {
-          return import('./tabs/cloud-bpmn');
-        },
-        getIcon() {
-          return BPMNIcon;
-        },
-        getInitialContents(options) {
-          return cloudBpmnDiagram;
-        },
-        getInitialFilename(suffix) {
-          return `diagram_${suffix}.bpmn`;
-        },
-        getHelpMenu() {
-          return BPMN_HELP_MENU;
-        },
-        getNewFileMenu() {
-          return [ {
-            label: 'BPMN diagram',
-            group: 'Camunda 8',
-            action: 'create-cloud-bpmn-diagram'
-          } ];
-        },
-        async getLinter(plugins = [], tab, getConfig) {
-          const templates = await getConfig('bpmn.elementTemplates', tab.file) || [];
-          const cloudTemplates = getCloudTemplates(templates);
-
-          return new BpmnLinter({
-            modeler: 'desktop',
-            type: 'cloud',
-            plugins: [
-              ...plugins,
-              CloudElementTemplatesLinterPlugin(cloudTemplates)
-            ]
-          });
-        }
-      },
       bpmn: {
         name: 'BPMN',
         encoding: ENCODING_UTF8,
@@ -241,7 +142,13 @@ export default class TabsProvider {
         },
         extensions: [ 'bpmn', 'xml' ],
         canOpen(file) {
-          return parseDiagramType(file.contents) === 'bpmn';
+          const { contents } = file;
+
+          if (parseDiagramType(contents) !== 'bpmn') {
+            return false;
+          }
+
+          return !hasZeebeDependency(contents);
         },
         getComponent(options) {
           return import('./tabs/bpmn');
@@ -280,216 +187,8 @@ export default class TabsProvider {
             plugins
           });
         }
-      },
-      'cloud-dmn': {
-        name: 'DMN',
-        encoding: ENCODING_UTF8,
-        exports: {
-          png: EXPORT_PNG,
-          jpeg: EXPORT_JPEG,
-          svg: EXPORT_SVG
-        },
-        extensions: [ 'dmn', 'xml' ],
-        canOpen(file) {
-          const {
-            contents
-          } = file;
-
-          // (0) can open only DMN files
-          if (parseDiagramType(contents) !== 'dmn') {
-            return false;
-          }
-
-          // (1) detect execution platform
-          const executionPlatformDetails = parseExecutionPlatform(contents);
-
-          if (executionPlatformDetails) {
-            return executionPlatformDetails.executionPlatform === 'Camunda Cloud';
-          }
-
-          // (2) don't open DMN files without execution platform
-          return false;
-        },
-        getComponent(options) {
-          return import('./tabs/cloud-dmn');
-        },
-        getIcon() {
-          return DMNIcon;
-        },
-        getInitialContents() {
-          return cloudDmnDiagram;
-        },
-        getInitialFilename(suffix) {
-          return `diagram_${suffix}.dmn`;
-        },
-        getHelpMenu() {
-          return DMN_HELP_MENU.concat(C7_HELP_MENU);
-        },
-        getNewFileMenu() {
-          return [ {
-            label: 'DMN diagram',
-            group: 'Camunda 8',
-            action: 'create-cloud-dmn-diagram'
-          } ];
-        },
-        getLinter() {
-          return null;
-        }
-      },
-      dmn: {
-        name: 'DMN',
-        encoding: ENCODING_UTF8,
-        exports: {
-          png: EXPORT_PNG,
-          jpeg: EXPORT_JPEG,
-          svg: EXPORT_SVG
-        },
-        extensions: [ 'dmn', 'xml' ],
-        canOpen(file) {
-          return parseDiagramType(file.contents) === 'dmn';
-        },
-        getComponent(options) {
-          return import('./tabs/dmn');
-        },
-        getIcon() {
-          return DMNIcon;
-        },
-        getInitialContents() {
-          return dmnDiagram;
-        },
-        getInitialFilename(suffix) {
-          return `diagram_${suffix}.dmn`;
-        },
-        getHelpMenu() {
-          return DMN_HELP_MENU;
-        },
-        getNewFileMenu() {
-          return [ {
-            label: 'DMN diagram',
-            group: 'Camunda 7',
-            action: 'create-dmn-diagram'
-          } ];
-        },
-        getLinter() {
-          return null;
-        }
-      },
-      'cloud-form': {
-        name: 'Form',
-        encoding: ENCODING_UTF8,
-        exports: {},
-        extensions: [ 'form' ],
-        canOpen(file) {
-          const {
-            contents
-          } = file;
-
-          try {
-            const obj = JSON.parse(contents);
-            const { executionPlatform } = obj;
-            return file.name.endsWith('.form') && executionPlatform === ENGINES.CLOUD;
-
-          } catch (e) {
-            return false;
-          }
-        },
-        getComponent(options) {
-          return import('./tabs/form');
-        },
-        getIcon() {
-          return FormIcon;
-        },
-        getInitialContents() {
-          return cloudForm;
-        },
-        getInitialFilename(suffix) {
-          return `form_${suffix}.form`;
-        },
-        getHelpMenu() {
-          return [];
-        },
-        getNewFileMenu() {
-          return [ {
-            label: 'Form',
-            group: 'Camunda 8',
-            action: 'create-cloud-form'
-          } ];
-        },
-        getLinter() {
-          return formLinter;
-        }
-      },
-      form: {
-        name: 'Form',
-        encoding: ENCODING_UTF8,
-        exports: {},
-        extensions: [ 'form' ],
-        canOpen(file) {
-          return file.name.endsWith('.form');
-        },
-        getComponent(options) {
-          return import('./tabs/form');
-        },
-        getIcon() {
-          return FormIcon;
-        },
-        getInitialContents() {
-          return form;
-        },
-        getInitialFilename(suffix) {
-          return `form_${suffix}.form`;
-        },
-        getHelpMenu() {
-          return [];
-        },
-        getNewFileMenu() {
-          return [ {
-            label: 'Form',
-            group: 'Camunda 7',
-            action: 'create-form'
-          } ];
-        },
-        getLinter() {
-          return formLinter;
-        }
-      },
-      'rpa': {
-        name: 'RPA',
-        encoding: 'utf8',
-        exports: {},
-        extensions: [ 'rpa' ],
-        canOpen(file) {
-          return file.name.endsWith('.rpa');
-        },
-        getComponent(options) {
-          return import('./tabs/rpa');
-        },
-        getIcon() {
-          return Bot;
-        },
-        getInitialContents() {
-          return rpaScript;
-        },
-        getInitialFilename(suffix) {
-          return `script_${suffix}.rpa`;
-        },
-        getHelpMenu() {
-          return [];
-        },
-        getNewFileMenu() {
-          return [ {
-            label: 'RPA script',
-            group: 'Camunda 8',
-            action: 'create-diagram',
-            options: {
-              type: 'rpa'
-            }
-          } ];
-        },
-        getLinter() {
-          return new RPALinter();
-        }
       }
+
     };
 
     plugins.forEach((tabs) => {
@@ -512,45 +211,6 @@ export default class TabsProvider {
 
       return acc;
     }, {});
-
-    if (Flags.get(DISABLE_ZEEBE)) {
-      this.providersByFileType.bpmn = this.providersByFileType.bpmn.filter(p => p !== this.providers['cloud-bpmn']);
-      this.providersByFileType.dmn = this.providersByFileType.dmn.filter(p => p !== this.providers['cloud-dmn']);
-      this.providersByFileType.form = this.providersByFileType.form.filter(p => p !== this.providers['cloud-form']);
-      this.providersByFileType.rpa = [];
-
-      delete this.providers['cloud-bpmn'];
-      delete this.providers['cloud-dmn'];
-      delete this.providers['cloud-form'];
-      delete this.providers['rpa'];
-    }
-
-    if (Flags.get(DISABLE_PLATFORM)) {
-      this.providersByFileType.bpmn = this.providersByFileType.bpmn.filter(p => p !== this.providers.bpmn);
-      delete this.providers.bpmn;
-
-      delete this.providers.dmn;
-      delete this.providersByFileType.dmn;
-
-      delete this.providers.form;
-    }
-
-    if (Flags.get(DISABLE_DMN)) {
-      delete this.providers.dmn;
-      delete this.providers['cloud-dmn'];
-      delete this.providersByFileType.dmn;
-    }
-
-    if (Flags.get(DISABLE_FORM)) {
-      delete this.providers.form;
-      delete this.providers['cloud-form'];
-      delete this.providersByFileType.form;
-    }
-
-    if (Flags.get(DISABLE_RPA)) {
-      delete this.providers.rpa;
-      delete this.providersByFileType.rpa;
-    }
   }
 
   getProviderNames() {
@@ -573,6 +233,19 @@ export default class TabsProvider {
 
   hasProvider(fileType) {
     return !!this._getProvidersForExtension(fileType).length;
+  }
+
+  getOpenFileError(file) {
+    const { contents } = file;
+
+    if (parseDiagramType(contents) === 'bpmn' && hasZeebeDependency(contents)) {
+      return {
+        message: 'Camunda 8 BPMN import blocked.',
+        detail: 'This BPMN file uses the Zeebe namespace or Camunda 8 execution platform metadata. Import it only after explicitly converting it to Camunda 7 BPMN.'
+      };
+    }
+
+    return null;
   }
 
   getProvider(type) {
@@ -731,6 +404,20 @@ function getTypeFromFileExtension(file) {
   const { name } = file;
 
   return name.substring(name.lastIndexOf('.') + 1).toLowerCase();
+}
+
+
+function hasZeebeDependency(contents) {
+  const executionPlatformDetails = parseExecutionPlatform(contents);
+
+  if (executionPlatformDetails && [
+    'Camunda Cloud',
+    'Zeebe'
+  ].includes(executionPlatformDetails.executionPlatform)) {
+    return true;
+  }
+
+  return !!findNamespaceUsages(contents, NAMESPACE_URL_ZEEBE);
 }
 
 function findProviderForFile(providers, file) {
